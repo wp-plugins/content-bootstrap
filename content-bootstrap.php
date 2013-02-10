@@ -5,7 +5,7 @@ Author: Takayuki Miyauchi
 Plugin URI: http://wpist.me/
 Description: Apply twitter bootstrap css under the content area only.
 Author: Takayuki Miyauchi
-Version: 0.2.1
+Version: 0.3.0
 Author URI: http://wpist.me/
 Domain Path: /languages
 Text Domain: content-bootstrap
@@ -14,6 +14,8 @@ Text Domain: content-bootstrap
 new ContentBootstrap();
 
 class ContentBootstrap {
+
+const bootstrap_version = '2.2.2-1';
 
 function __construct()
 {
@@ -30,6 +32,25 @@ public function plugins_loaded()
 
     add_shortcode('label', array(&$this, 'shortcode_label'));
     add_shortcode('badge', array(&$this, 'shortcode_badge'));
+    add_shortcode('icon', array(&$this, 'shortcode_icon'));
+}
+
+public function shortcode_icon($p)
+{
+    $class = array();
+
+    if (isset($p[0]) && ($icon = preg_replace('/^icon-/', '', $p[0]))) {
+        $class[] = esc_attr('icon-'.$icon);
+    }
+
+    if (isset($p[1]) && ('white' === preg_replace('/^icon-/', '', $p[1]))) {
+        $class[] = 'icon-white';
+    }
+
+    return sprintf(
+        '<i class="%s"></i>',
+        join(' ', $class)
+    );
 }
 
 public function shortcode_label($p, $content)
@@ -42,7 +63,7 @@ public function shortcode_label($p, $content)
     return sprintf(
         '<span class="%s">%s</span>',
         join(' ', $class),
-        $content
+        do_shortcode($content)
     );
 }
 
@@ -56,7 +77,7 @@ public function shortcode_badge($p, $content)
     return sprintf(
         '<span class="%s">%s</span>',
         join(' ', $class),
-        $content
+        do_shortcode($content)
     );
 }
 
@@ -105,12 +126,19 @@ public function tiny_mce_before_init($init)
             'wrapper' => true,
         ),
         array(
+            'title' => 'Well Small',
+            'block' => 'div',
+            'classes' => 'well well-small',
+            'wrapper' => true,
+        ),
+        array(
             'title' => 'Fluid Grid',
             'block' => 'div',
             'classes' => 'row-fluid',
             'wrapper' => true,
         ),
     );
+    $styles = apply_filters('content_bootstrap_styles', $styles);
     $init['style_formats'] = json_encode($styles);
     return $init;
 }
@@ -118,8 +146,11 @@ public function tiny_mce_before_init($init)
 public function mce_css($css)
 {
     $ver = filemtime(dirname(__FILE__).'/css/editor-style.css');
-    $css .= ', '.plugins_url('css/editor-style.css?ver='.$ver, __FILE__);
-    return $css;
+    $css = plugins_url(
+        'css/editor-style.css?ver='.self::bootstrap_version,
+        __FILE__
+    );
+    return ','.$css;
 }
 
 public function wp_enqueue_scripts()
@@ -128,7 +159,7 @@ public function wp_enqueue_scripts()
         'content-bootstrap',
         plugins_url('css/content-bootstrap.css', __FILE__),
         array(),
-        filemtime(dirname(__FILE__).'/css/content-bootstrap.css')
+        self::bootstrap_version
     );
 }
 
