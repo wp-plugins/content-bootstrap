@@ -2,10 +2,10 @@
 /*
 Plugin Name: Content Bootstrap
 Author: Takayuki Miyauchi
-Plugin URI: http://wpist.me/
+Plugin URI: https://github.com/miya0001/content-bootstrap
 Description: Apply twitter bootstrap css under the content area only.
 Author: Takayuki Miyauchi
-Version: 0.3.0
+Version: 0.7.0
 Author URI: http://wpist.me/
 Domain Path: /languages
 Text Domain: content-bootstrap
@@ -15,7 +15,7 @@ new ContentBootstrap();
 
 class ContentBootstrap {
 
-const bootstrap_version = '2.2.2-1';
+const bootstrap_version = '2.3.2-3';
 
 function __construct()
 {
@@ -83,7 +83,13 @@ public function shortcode_badge($p, $content)
 
 public function the_content($content)
 {
-    return '<div id="content-bootstrap-area">'.$content.'</div>';
+    $wrap = apply_filters( 'content_bootstrap_wrap', true );
+    if ( $wrap ) {
+        return '<div class="content-bootstrap-area">'.$content.'</div>';
+    } else {
+        return $content;
+    }
+    
 }
 
 public function mce_buttons_2($buttons)
