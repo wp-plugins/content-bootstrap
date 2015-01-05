@@ -5,169 +5,59 @@ Author: Takayuki Miyauchi
 Plugin URI: https://github.com/miya0001/content-bootstrap
 Description: Apply twitter bootstrap css under the content area only.
 Author: Takayuki Miyauchi
-Version: 0.7.0
-Author URI: http://wpist.me/
+Version: 0.9.0
+Author URI: https://github.com/miya0001/
 Domain Path: /languages
 Text Domain: content-bootstrap
 */
 
-new ContentBootstrap();
+$content_bootstrap = new Content_Bootstrap();
+$content_bootstrap->register();
 
-class ContentBootstrap {
-
-const bootstrap_version = '2.3.2-3';
-
-function __construct()
+class Content_Bootstrap
 {
-    add_action('plugins_loaded', array(&$this, 'plugins_loaded'));
+	private $ver;
+
+	public function register()
+	{
+		add_action( 'init', array( $this, 'init' ) );
+	}
+
+	public function init()
+	{
+		$plugin_info = get_file_data( __FILE__, array(
+			'version' => 'Version',
+			'text_domain' => 'Text Domain',
+			'domain_path' => 'Domain Path',
+		) );
+
+		$this->ver = $plugin_info['version'];
+
+		require_once( dirname( __FILE__ ) . '/includes/bootstrap.php' );
+
+		$bootstrap_version = self::get_bootstrap_version();
+
+		if ( 'bootstrap3' === $bootstrap_version ) {
+			require_once( dirname( __FILE__ ) . '/bootstrap/bootstrap3.php' );
+			$bootstrap3 = new Bootstrap3( $this->ver, plugins_url( '', __FILE__ ) );
+			$bootstrap3->register();
+		} elseif ( 'bootstrap2' === $bootstrap_version ) {
+			require_once( dirname( __FILE__ ) . '/bootstrap/bootstrap2.php' );
+			$bootstrap2 = new Bootstrap2( $this->ver, plugins_url( '', __FILE__ ) );
+			$bootstrap2->register();
+		}
+	}
+
+	public static function get_bootstrap_version()
+	{
+		if ( defined( 'CONTENT_BOOTSTRAP_ENABLE_VERSION_3' ) && CONTENT_BOOTSTRAP_ENABLE_VERSION_3 ) {
+			return 'bootstrap3';
+		} else {
+			if ( apply_filters( 'content_bootstrap_enable_version_3', false ) ) {
+				return 'bootstrap3';
+			} else {
+				return 'bootstrap2';
+			}
+		}
+	}
 }
-
-public function plugins_loaded()
-{
-    add_action('wp_enqueue_scripts', array(&$this, 'wp_enqueue_scripts'));
-    add_filter('mce_css', array(&$this, 'mce_css'));
-    add_filter('tiny_mce_before_init', array(&$this, 'tiny_mce_before_init'), 9999);
-    add_filter('mce_buttons_2', array(&$this, 'mce_buttons_2'));
-    add_filter('the_content', array(&$this, 'the_content'));
-
-    add_shortcode('label', array(&$this, 'shortcode_label'));
-    add_shortcode('badge', array(&$this, 'shortcode_badge'));
-    add_shortcode('icon', array(&$this, 'shortcode_icon'));
-}
-
-public function shortcode_icon($p)
-{
-    $class = array();
-
-    if (isset($p[0]) && ($icon = preg_replace('/^icon-/', '', $p[0]))) {
-        $class[] = esc_attr('icon-'.$icon);
-    }
-
-    if (isset($p[1]) && ('white' === preg_replace('/^icon-/', '', $p[1]))) {
-        $class[] = 'icon-white';
-    }
-
-    return sprintf(
-        '<i class="%s"></i>',
-        join(' ', $class)
-    );
-}
-
-public function shortcode_label($p, $content)
-{
-    $class = array('label');
-    if (isset($p['name']) && preg_match('/^[a-z]+$/', $p['name'])) {
-        $class[] = 'label-'.esc_attr($p['name']);
-    }
-
-    return sprintf(
-        '<span class="%s">%s</span>',
-        join(' ', $class),
-        do_shortcode($content)
-    );
-}
-
-public function shortcode_badge($p, $content)
-{
-    $class = array('badge');
-    if (isset($p['name']) && preg_match('/^[a-z]+$/', $p['name'])) {
-        $class[] = 'badge-'.esc_attr($p['name']);
-    }
-
-    return sprintf(
-        '<span class="%s">%s</span>',
-        join(' ', $class),
-        do_shortcode($content)
-    );
-}
-
-public function the_content($content)
-{
-    $wrap = apply_filters( 'content_bootstrap_wrap', true );
-    if ( $wrap ) {
-        return '<div class="content-bootstrap-area">'.$content.'</div>';
-    } else {
-        return $content;
-    }
-    
-}
-
-public function mce_buttons_2($buttons)
-{
-    array_unshift($buttons, 'styleselect');
-    return $buttons;
-}
-
-public function tiny_mce_before_init($init)
-{
-    $styles = array(
-        array(
-            'title' => 'Alert',
-            'block' => 'div',
-            'classes' => 'alert alert-block',
-            'wrapper' => true,
-        ),
-        array(
-            'title' => 'Success',
-            'block' => 'div',
-            'classes' => 'alert alert-success',
-            'wrapper' => true,
-        ),
-        array(
-            'title' => 'Info',
-            'block' => 'div',
-            'classes' => 'alert alert-info',
-            'wrapper' => true,
-        ),
-        array(
-            'title' => 'Error',
-            'block' => 'div',
-            'classes' => 'alert alert-error',
-            'wrapper' => true,
-        ),
-        array(
-            'title' => 'Well',
-            'block' => 'div',
-            'classes' => 'well well-large',
-            'wrapper' => true,
-        ),
-        array(
-            'title' => 'Well Small',
-            'block' => 'div',
-            'classes' => 'well well-small',
-            'wrapper' => true,
-        ),
-        array(
-            'title' => 'Fluid Grid',
-            'block' => 'div',
-            'classes' => 'row-fluid',
-            'wrapper' => true,
-        ),
-    );
-    $styles = apply_filters('content_bootstrap_styles', $styles);
-    $init['style_formats'] = json_encode($styles);
-    return $init;
-}
-
-public function mce_css($css)
-{
-    $ver = filemtime(dirname(__FILE__).'/css/editor-style.css');
-    $css = plugins_url(
-        'css/editor-style.css?ver='.self::bootstrap_version,
-        __FILE__
-    );
-    return ','.$css;
-}
-
-public function wp_enqueue_scripts()
-{
-    wp_enqueue_style(
-        'content-bootstrap',
-        plugins_url('css/content-bootstrap.css', __FILE__),
-        array(),
-        self::bootstrap_version
-    );
-}
-
-}
-
