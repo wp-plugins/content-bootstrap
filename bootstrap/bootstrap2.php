@@ -2,6 +2,11 @@
 
 class Bootstrap2 extends Bootstrap
 {
+	public function __construct( $plugin_version, $plugins_url )
+	{
+		parent::__construct( $plugin_version, $plugins_url );
+	}
+
 	public function tiny_mce_before_init( $init )
 	{
 		$styles = array(
@@ -48,49 +53,10 @@ class Bootstrap2 extends Bootstrap
 		return $init;
 	}
 
-	public function shortcode_icon( $p )
+	public function admin_head()
 	{
-		$class = array();
-
-		if ( isset( $p[0] ) && ( $icon = preg_replace( '/^icon-/', '', $p[0] ) ) ) {
-			$class[] = esc_attr( 'icon-'.$icon );
-		}
-
-		if ( isset( $p[1] ) && ('white' === preg_replace( '/^icon-/', '', $p[1] ) ) ) {
-			$class[] = 'icon-white';
-		}
-
-		return sprintf(
-			'<i class="%s"></i>',
-			join( ' ', $class )
-		);
-	}
-
-	public function shortcode_label( $p, $content )
-	{
-		$class = array( 'label' );
-		if ( isset( $p['name'] ) && preg_match( '/^[a-z]+$/', $p['name'] ) ) {
-			$class[] = 'label-'.esc_attr( $p['name'] );
-		}
-
-		return sprintf(
-			'<span class="%s">%s</span>',
-			join( ' ', $class ),
-			do_shortcode( $content )
-		);
-	}
-
-	public function shortcode_badge( $p, $content )
-	{
-		$class = array( 'badge' );
-		if ( isset( $p['name'] ) && preg_match( '/^[a-z]+$/', $p['name'] ) ) {
-			$class[] = 'badge-'.esc_attr( $p['name'] );
-		}
-
-		return sprintf(
-			'<span class="%s">%s</span>',
-			join( ' ', $class ),
-			do_shortcode( $content )
-		);
+		// bootstrsap version should be statically in admin area.
+		$editor_style = $this->plugins_url . '/bootstrap/bootstrap2/css/editor-style.css?ver=' . $this->plugin_version;
+		add_editor_style( $editor_style );
 	}
 }
